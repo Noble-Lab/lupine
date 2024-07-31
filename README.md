@@ -1,4 +1,4 @@
-python boilerplate
+lupine
 ================================
 
 [![image](https://img.shields.io/travis/%7B%7B%20cookiecutter.github_username%20%7D%7D/%7B%7B%20cookiecutter.repo_name%20%7D%7D.svg)](https://travis-ci.org/%7B%7B%20cookiecutter.github_username%20%7D%7D/%7B%7B%20cookiecutter.repo_name%20%7D%7D)
@@ -9,13 +9,13 @@ python boilerplate
 [![image](https://img.shields.io/pypi/v/%7B%7B%20cookiecutter.repo_name%20%7D%7D.svg)](https://pypi.python.org/pypi/%7B%7B%20cookiecutter.repo_name%20%7D%7D)
 
 
-What is python_boilerplate?
+What is lupine?
 -------------------------------------
 
-python boilerplate contains all the boilerplate you need to create a Python package.
+lupine is a really cool python package! 
 
 -   Free software: MIT license
--   Documentation: <https://>lincoln-harris.github.io/python_boilerplate
+-   Documentation: <https://github.com/Noble-Lab/lupine/>
 
 Installation
 ------------
@@ -23,25 +23,20 @@ Installation
 To install this code, clone this github repository and use pip to install
 
 ```
-git clone <https://github.com/>lincoln-harris/python_boilerplate.git 
-cd python_boilerplate 
+git clone https://github.com/Noble-Lab/lupine.git
+cd lupine 
 
-# The "." means "install *this*, the folder where I am now"
 pip install . 
 ```
 
 Usage
 -----
 
-Greet a name multiple times!
-
-```
-$ python boilerplate hello --name "Rosalind Franklin" --count 10 
-```
+TODO: add this section. 
 
 
 Features
 --------
 
--   TODO
+TODO: add this section. 
 
