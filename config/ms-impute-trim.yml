@@ -1,0 +1,29 @@
+name: ms-impute-trim
+channels:
+  - pytorch
+  - bioconda
+  - conda-forge
+  - anaconda
+dependencies:
+  - python=3.7
+  - r-base=3.6
+  - r-essentials
+  - tqdm
+  - snakemake
+  - seaborn
+  - scipy
+  - scikit-learn
+  - pytorch=1.10.*
+  - pandas
+  - numpy
+  - pip
+  - matplotlib
+  - jupyter
+  - ipykernel
+  - pip:
+    - argparse==1.4.*
+    - flake8==4.0.*
+    - pytest==6.2.*
+    - rpy2==3.4.*
+    - unittest2==1.1.* 
+
