@@ -23,7 +23,7 @@ brew install zlib
 ```
 apt-get install autoconf automake gcc zlib1g libbz2 libssl
 ```
-`lupine` is not currently installable on Windows (we're working on it). `lupine` requires python>-3.7. 
+`lupine` is not currently installable on Windows (we're working on it). `lupine` requires python >= 3.7. 
 
 Installation
 ------------
