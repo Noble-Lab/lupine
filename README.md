@@ -76,7 +76,8 @@ The above command will run `lupine` and create a results directory with a file n
 
 Authors
 --------
-[Lincoln Harris](https://github.com/lincoln-harris) & [William S. Noble](https://noble.gs.washington.edu/). Department of Genome Sciences, University of Washington, Seattle, WA.
+[Lincoln Harris](https://github.com/lincoln-harris) & [William S. Noble](https://noble.gs.washington.edu/).     
+Department of Genome Sciences, University of Washington, Seattle, WA.
 
 Contributing
 ------------
