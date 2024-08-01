@@ -1,63 +1,86 @@
-lupine
+`lupine`
 ================================
 
-[![image](https://img.shields.io/travis/%7B%7B%20cookiecutter.github_username%20%7D%7D/%7B%7B%20cookiecutter.repo_name%20%7D%7D.svg)](https://travis-ci.org/%7B%7B%20cookiecutter.github_username%20%7D%7D/%7B%7B%20cookiecutter.repo_name%20%7D%7D)
-
-[![codecov](https://codecov.io/gh/%7B%7B%20cookiecutter.github_username%20%7D%7D/%7B%7B%20cookiecutter.repo_name%20%7D%7D/branch/master/graph/badge.svg)](https://codecov.io/gh/%7B%7B%20cookiecutter.github_username%20%7D%7D/%7B%7B%20cookiecutter.repo_name%20%7D%7D)
-
-[![image](https://img.shields.io/pypi/v/%7B%7B%20cookiecutter.repo_name%20%7D%7D.svg)](https://pypi.python.org/pypi/%7B%7B%20cookiecutter.repo_name%20%7D%7D)
-
-
-What is lupine?
+What is `lupine`?
 -------------------------------------
 
-TMT proteomics imputation with deep matrix factorization
+`lupine` is a python package for missing value imputation of quantitative proteomics data with deep matrix factorization. `lupine` is implemented in PyTorch. The only required input is a csv file containing a matrix of protein or peptide level quantifications where rows are proteins or peptides and columns are MS runs. Optional settings are described below. In our manuscript we evaluate `lupine` on TMT data, but it is also applicable to LFQ and DIA. This repository contains model weights for a pre-trained `lupine` model fit to ~1,900 clinical patient samples from CPTAC, described in our manuscript [here](https://pubs.acs.org/doi/10.1021/acs.jproteome.3c00205). Users can download this pre-trained model, append their own MS runs and fine-tune the `lupine` model to impute missing values in their own data. This will write a csv with imputed protein or peptide quantifications for the user-submitted runs. 
 
--   Free software: MIT license
--   Documentation: <https://github.com/Noble-Lab/lupine/>
+`lupine` _currently requires a GPU to train. We are working on a distilled model that can be run with reasonable runtime on a CPU._
+
+Dependencies
+------------
+`lupine` is configured to run within a virtual environment, the python package dependencies for which are provided in `requirements.txt`. However, if you are having trouble with install, you may try installing the following dependencies. 
+
+**MacOS dependencies:**
+```
+pip install setuptools
+brew update
+brew install zlib
+```
+
+**Linux dependencies:**
+```
+apt-get install autoconf automake gcc zlib1g libbz2 libssl
+```
+`lupine` is not currently installable on Windows (we're working on it). `lupine` requires python>-3.7. 
 
 Installation
 ------------
-
-To install this code, clone this github repository and use pip to install
-
+**With the python standard library [`venv`](https://docs.python.org/3/library/venv.html) module:**
 ```
-git clone https://github.com/Noble-Lab/lupine.git
-cd lupine 
+python -m venv lupine
+source lupine/bin/activate
+pip3 install lupine
+```
 
-pip install . 
+**With [conda](https://anaconda.org/anaconda/conda):**
+```
+conda create -n lupine python=3.7
+conda activate lupine
+pip3 install lupine
+```
+
+**From [PyPi](https://pypi.org/):**   
+System-wide installation, not recommended. 
+```
+pip3 install lupine
+OR
+pip3 install --user lupine
 ```
 
 Usage
 -----
-`n_prots` : _int_,    
-    The number of proteins in the quants matrix. Required.     
+To impute a matrix of peptide or protein quantifications:
+```
+lupine impute /path/to/peptide/quants/csv --args
+```
+The arguments are described below. The only required argument is the path to the csv. 
 
-`n_runs` : _int_,    
-    The number of runs in the protein quants matrix. Required.       
+```
+--n_prot_factors : int, the number of protein factors.          
 
-`n_prot_factors` : _int_,    
-    The number of protein factors. Optional.          
+--n_run_factors : int, the number of factors to use for the matrix factorization-based run embeddings.  
 
-`n_run_factors` : _int_,   
-    The number of factors to use for the matrix factorization-based run embeddings. Optional.        
+--n_layers : int, the number of hidden layers in the DNN.        
 
-`n_layers` : _int_,     
-    The number of hidden layers in the DNN. Optional.        
+--n_nodes : int, the number of nodes in the factorization based neural network.       
 
-`n_nodes` : _int_,      
-    The number of nodes in the factorization based neural network. Optional.             
+--rand_seed : int, the random seed. Should probably only be set for testing and figure generation. Default is None.
+     
+--biased : bool, use the biased mini-batch selection procedure when creating the data loader?      
 
-`rand_seed` : _int_,           
-    The random seed. Should probably only be set for testing and figure generation. Default is `None`. Optional.           
-`biased` : _bool_,           
-    Use the biased mini-batch selection procedure when creating the data loader? Optional.      
+--device : str, the device to use for computation, {"cpu", "cuda"}.    
+```
 
-`device` : _str_,    
-    The device to use for computation, {"cpu", "cuda"}. Optional.     
-
-Features
+Authors
 --------
+[Lincoln Harris](https://github.com/lincoln-harris) & [William S. Noble](https://noble.gs.washington.edu/). Department of Genome Sciences, University of Washington, Seattle, WA.
 
-TODO: add this section. 
+CONTRIBUTING
+------------
+We welcome any bug reports, feature requests or other contributions. Please submit a well documented report on our [issue tracker](https://github.com/Noble-Lab/lupine/issues). For substantial changes please fork this repo and submit a pull request for review.
 
+See [CONTRIBUTING.md](https://github.com/Noble-Lab/lupine/blob/main/CONTRIBUTING.md) for additional details.
+
+You can find official releases [here](https://github.com/Noble-Lab/lupine/releases).
