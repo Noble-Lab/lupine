@@ -1,40 +1,23 @@
 """
 LUPINE_BASE
-1.16.23
+8.4.24
 
 The abstract base class for a model that randomly generates protein 
-and run embeddings, then refines them with stochastic gradient descent.
-Missing values are imputed by taking the concatenation of the 
-corresponding protein and run factors and feeding them through a deep
-neural net. Configured for protein-level imputation, for the quants
-matrices from the University of Michigan's data processing pipeline
-for CPTAC. 
+and run embeddings, then refines them with stochastic gradient 
+descent. Missing values are imputed by taking the concatenation of 
+the corresponding protein and run factors and feeding them through 
+a deep neural net. Configured for protein-level imputation. 
 """
 import pandas as pd
 import numpy as np
 import torch
 import os
-import matplotlib.pyplot as plt
-import seaborn as sns
 from tqdm import tqdm
 from scipy.stats import ranksums
 
-# Import my classes and modules
-from data_loaders import FactorizationDataset
-from scalers import STDScaler
-from utils import plot_partition_distributions
-
-# Plotting templates
-sns.set(context="talk", style="ticks") 
-sns.set_palette("tab10")
-
-torch.cuda.empty_cache()
-torch.backends.cuda.matmul.allow_tf32 = True
-
-# Got sick of looking at the PyTorch nested tensors warning
-#	but generally this is a bad idea
-import warnings
-warnings.filterwarnings("ignore", category=UserWarning)
+# Import our classes and modules
+from .data_loaders import FactorizationDataset
+from .scalers import STDScaler
 
 class LupineBase(torch.nn.Module):
 	"""
@@ -72,15 +55,10 @@ class LupineBase(torch.nn.Module):
 	patience : int, optional
 		The number of training epochs to wait before stopping if
 		it seems like the model has converged
-	q_filt : float, optional,
-		The quantile of low values to set to NaN when scaling the
-		data
 	rand_seed : int, optional,
-		The random seed. Should probably only be set for testing and
-		figure generation. Default is `None`.
-	testing : bool, optional,
-		Is the model being run in testing mode? If yes, random seeds
-		will be set manually
+		The random seed. Default is `None`.
+	testing : bool, optional. 
+		Default is "False". Is the model being run in testing mode?
 	biased : bool, optional,
 		Use the biased mini-batch selection procedure when creating
 		the data loader? 
@@ -98,9 +76,8 @@ class LupineBase(torch.nn.Module):
 		learning_rate=0.01,
 		batch_size=128,
 		tolerance=0.001,
-		max_epochs=512,
+		max_epochs=128,
 		patience=10,
-		q_filt=0.001,
 		rand_seed=None,
 		testing=False,
 		biased=False,
@@ -109,7 +86,6 @@ class LupineBase(torch.nn.Module):
 		super().__init__()
 
 		self.device = device
-		print("Loading tensors on: ", self.device)
 
 		self.n_prot_factors = n_prot_factors
 		self.n_run_factors = n_run_factors
@@ -124,16 +100,13 @@ class LupineBase(torch.nn.Module):
 		self.testing = testing
 		self.biased = biased 
 		
-		# This should really only be specified for testing and 
-		#   figure generation
 		if self.rand_seed:
 			torch.manual_seed(self.rand_seed)
 
 		# For writing the model state to disk
-		self.MODELPATH = "./OPT_MODEL_INTERNAL.pt"
+		self.MODELPATH = "results/OPT_MODEL_INTERNAL.pt"
 
-		# Need to remove the previously saved model before training
-		#    a new one. FIXME: is there a better way to do this?
+		# Is there a better way to do this? 
 		try:
 			os.remove(self.MODELPATH)
 		except FileNotFoundError:
@@ -184,14 +157,12 @@ class LupineBase(torch.nn.Module):
 			torch.nn.Linear(self.n_nodes, 1, device=self.device)
 		)
 		# Add the final transformation
-		#dnn.append(torch.nn.Softplus())
 		dnn.append(torch.nn.LeakyReLU(0.1))
 		# Convert to sequential
 		self.dnn = torch.nn.Sequential(*dnn)
 
 		# Init the loss function 
 		self.loss_fn = torch.nn.MSELoss(reduction="mean")
-		#self.loss_fn = self._nrmse_loss
 
 		# Init the scaler
 		self.scaler = STDScaler(testing=False, log_transform=False)
@@ -203,9 +174,6 @@ class LupineBase(torch.nn.Module):
 
 		self._history = []
 		self._stopping_criteria = None
-
-		total_params = sum(p.numel() for p in self.parameters())
-		print(f"Number of parameters: {total_params}")
 
 	def fit(self, X_mat, X_val_mat=None):
 		"""
@@ -279,13 +247,6 @@ class LupineBase(torch.nn.Module):
 
 		if validate:
 			val_loader.get_standard_loader()
-
-		# sanity checking the distributions of the partitions
-		# plot_partition_distributions(
-		# 		X.detach().cpu().numpy(), 
-		# 		train_loader, val_loader,
-		# 		#outstr="test", save_fig=True,
-		# )
 
 		# Evaluate the model prior to training
 		train_loss = self._evaluate(train_loader, 0, "Train")
@@ -407,10 +368,9 @@ class LupineBase(torch.nn.Module):
 
 	def _evaluate(self, loader, epoch, set_name):
 		"""
-		Evaluate model progress, during training. 
-		Private function. Note that this calculates the loss across
-		the *entire* training or validation set and not the current 
-		mini-batch. 
+		Evaluate model progress, during training. Private function.
+		Note that this calculates the loss across the *entire* 
+		training or validation set and not the current mini-batch. 
 		
 		Parameters
 		----------
@@ -446,44 +406,6 @@ class LupineBase(torch.nn.Module):
 					{"epoch": epoch, set_name: curr_loss.item()})
 
 		return curr_loss
-
-	def _nrmse_loss(self, x_vals, y_vals):
-		"""
-		Get the (normalized) Root Mean Squared Error loss between 
-		two tensors. One question is how to actually do the 
-		normalization: could be standard deviation, could be mean, 
-		could be (max-min).
-		
-		Parameters
-		----------
-		x_vals, y_vals : torch.tensor, 
-			The observed and expected values, respectively
-
-		Returns
-		----------
-		nrmse_loss : torch.tensor 
-			The normalized root mean squared error loss
-		"""
-		# Exclude NaNs
-		x_rav = x_vals.ravel()
-		y_rav = y_vals.ravel()
-		missing = torch.isnan(x_rav) | torch.isnan(y_rav)
-
-		# Get the MSE
-		mse = torch.sum((x_rav[~missing] - y_rav[~missing])**2) \
-											/ torch.sum(~missing)
-		# Get the RMSE
-		rmse = torch.sqrt(mse)
-
-		# Normalize by the standard deviation of the expected values
-		#	How to do the normalization?
-		y_std = torch.std(y_rav[~missing])
-		y_mean = torch.mean(y_rav[~missing])
-		y_diff = \
-			torch.max(y_rav[~missing]) - torch.min(y_rav[~missing])
-		nrmse = rmse / y_std
-
-		return nrmse
 
 	def transform(self, X, X_val):
 		"""
@@ -581,35 +503,6 @@ class LupineBase(torch.nn.Module):
 			in X are imputed
 		"""
 		return self.fit(X, X_val).transform(X, X_val)
-
-	def plot_loss_curves(self):
-		""" 
-		Generate model loss vs training epoch plot. For both training
-		and validation sets. A basic sanity check method. Note that 
-		the scale of the y axis will reflect the scaled values. 
-
-		Parameters
-		----------
-		self
-		"""
-		plt.figure()
-		plt.plot(list(self.history.epoch[1:]), 
-			list(self.history["Train"][1:]), 
-			label="Training loss")
-		plt.plot(list(self.history.epoch[1:]), 
-			list(self.history["Validation"][1:]), 
-			label="Validation loss")
-
-		plt.ylim(ymin=0)
-
-		plt.legend()
-		plt.xlabel("Epochs")
-		plt.ylabel("MSE")
-
-		plt.show()
-		plt.close()
-
-		return
 
 	@property
 	def history(self):

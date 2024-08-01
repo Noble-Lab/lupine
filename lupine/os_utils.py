@@ -1,7 +1,6 @@
 import os
 import subprocess
 
-
 # Set input language USA unicode encoding setting
 # Necessary because click assumes ascii input unless otherwise specified
 # https://click.palletsprojects.com/en/7.x/python3/
@@ -11,23 +10,19 @@ os.environ["LC_ALL"] = unicode_usa
 
 HOME = os.path.expanduser("~")
 
-
 def sanitize_path(path):
     """Make sure path is absolute and user-expanded"""
     return os.path.abspath(os.path.expanduser(path))
-
 
 def maybe_add_slash(path):
     """Add a final trailing slash if it wasn't there already"""
     with_trailing_slash = path if path.endswith('/') else path + '/'
     return with_trailing_slash
 
-
 def decode(stderr_or_stdout):
     decoded = stderr_or_stdout.decode("utf-8").splitlines()
     lines = [x.strip() for x in decoded]
     return lines
-
 
 def get_stdout_from_command(command):
     """Run a program on the command line, and save the stdout
@@ -45,7 +40,6 @@ def get_stdout_from_command(command):
     result = subprocess.run(command, stdout=subprocess.PIPE)
     lines = decode(result.stdout)
     return lines
-
 
 def get_stdout_stderr_from_command(command):
     """Run a program on the command line, and save the stdout

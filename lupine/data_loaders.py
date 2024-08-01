@@ -1,12 +1,12 @@
 """
-DATA-LOADERS
+DATA_LOADERS
 
-This module contains the FactorizationDataset class, which is used
-to set up mini-batches for the train and validation sets. This 
-is a custom data loader specifically designed for matrix 
-factorization problems, and specifically tailored for MNAR settings.
-Moving this to a separate file because `base` was getting unwieldy, 
-and so I can easily add methods and configs to this class. 
+This module contains classes for data loaders. Contains a single 
+class:
+    `FactorizationDataset`: sets up mini-bathes for training and 
+	(if desired) validation sets. This is a custom data loader 
+	specifically tailored to matrix factorization problems, and 
+	specifically designed for our MNAR setting.  
 """
 import torch 
 import numpy as np
@@ -38,7 +38,8 @@ class FactorizationDataset():
 	testing : bool, 
 		Is the model being run in testing mode? If yes, random seeds
 		will be set manually
-	q_anchor : float, optional, for MNAR biased selection
+	q_anchor : float, optional, 
+		For MNAR biased selection.
 		What quantile of X to center the thresholds distribution
 	t_std : float, optional, for MNAR biased selection
 		The standard deviation of the thresholds distribution
@@ -47,7 +48,8 @@ class FactorizationDataset():
 	n_iters : int, optional, for MNAR biased selection
 		The number of iterations to perform the biased selection 
 		loop for
-	seed : int, optional, for MNAR biased selection
+	seed : int, optional, 
+		For MNAR biased selection.
 		The random seed. The default is to not assign a random seed, 
 		which tells numpy to select on on its own. This ensures non-
 		deterministic mini-batch selection. Note that setting this 
@@ -98,7 +100,7 @@ class FactorizationDataset():
 			self.b_prob = b_prob 
 			self.iters = iters 
 			self.rand_seed = rand_seed 
-			# get the quantiles and the std of the training set
+			# Get the quantiles and the std of the training set
 			self.q_thresh = np.nanquantile(X, self.anchor)
 			self.quants_std = np.nanstd(X)
 		else:
@@ -108,7 +110,7 @@ class FactorizationDataset():
 			self.iters = None 
 			self.rand_seed = None
 
-		# this will ensure stochastic data loaders. good for testing,
+		# This will ensure stochastic data loaders. good for testing,
 		#   but should be turned off for everything else 
 		if rand_seed:
 			torch.manual_seed(rand_seed)
@@ -122,39 +124,39 @@ class FactorizationDataset():
 		"""
 		assert not self.biased, "You did an oopsie"
 
-		# set the batch size
+		# Set the batch size
 		if self.batch_size is not None:
 			if self.batch_size > self.mat.numel():
 				self.batch_size = self.mat.numel()
 		else:
 			self.batch_size = self.mat.numel()
 
-		# get a boolean mask of all of the NaN entries
+		# Get a boolean mask of all of the NaN entries
 		selected = torch.isnan(self.mat)
 
-		# reverse the mask -- True for present entries
+		# Reverse the mask -- True for present entries
 		if not self.missing:
 			selected = ~selected
 
-		# get an array of tuples corresponding to present X_ijs
+		# Get an array of tuples corresponding to present X_ijs
 		locs = torch.nonzero(selected)
-		# transpose the array of tuples
+		# Transpose the array of tuples
 		locs = locs.T
 
-		# permute the locs
+		# Permute the locs
 		if self.shuffle:
 			locs = \
 				locs[:, torch.randperm(locs.shape[1])]
 
-		# get the number of elements per batch
+		# Get the number of elements per batch
 		elms = len(self.mat[selected])
 
 		self.n_batches = np.int32(np.floor(elms / self.batch_size))
 		if self.n_batches < 1:
 			self.n_batches = 1
 
-		# split into `n_batches` mini-batches. 
-		# 	generates a list of mini-batches
+		# Split into `n_batches` mini-batches. Generates a list
+		#    of mini-batches
 		self.locs = \
 			torch.tensor_split(locs, self.n_batches, dim=1)
 
@@ -168,42 +170,41 @@ class FactorizationDataset():
 		"""
 		assert self.biased, "You did an oopsie"
 
-		# get a boolean mask of all of the NaN entries
+		# Get a boolean mask of all of the NaN entries
 		selected = torch.isnan(self.mat)
 
-		# reverse the mask -- True for present entries
+		# Reverse the mask -- True for present entries
 		if not self.missing:
 			selected = ~selected
 		
-		# get an array of tuples corresponding to present X_ijs
+		# Get an array of tuples corresponding to present X_ijs
 		locs = torch.nonzero(selected)
-		# transpose the array of tuples
+		# Transpose the array of tuples
 		locs = locs.T
 
-		# permute the locs
+		# Permute the locs
 		if self.shuffle:
 			locs = \
 				locs[:, torch.randperm(locs.shape[1])]
-		# get the biased mini-batches
-		#locs_biased = self._get_biased_mini_batches(locs)
+		# Get the biased mini-batches
 		locs_biased = self._get_biased_mini_batches_vectorized(locs)
 
-		# permute again
+		# Permute again
 		locs_biased = \
 			locs_biased[:, torch.randperm(locs_biased.shape[1])]
 
-		# set the batch size
+		# Set the batch size
 		if self.batch_size is not None:
 			if self.batch_size > len(locs_biased[0]):
 				self.batch_size = len(locs_biased[0])
 		else:
 			self.batch_size = len(locs_biased[0])
 
-		# get the number of elements per batch
+		# Get the number of elements per batch
 		elms = len(locs_biased[0])
 		self.n_batches = np.int32(np.ceil(elms / self.batch_size))
 
-		# split into `n_batches` mini-batches. Generates a list of 
+		# Split into `n_batches` mini-batches. Generates a list of 
 		#   mini-batches
 		self.locs = torch.tensor_split(
 						locs_biased, self.n_batches, dim=1)
@@ -211,8 +212,8 @@ class FactorizationDataset():
 
 	def _get_biased_mini_batches_vectorized(self, locs):
 		"""
-		An alternate procedure for probabilistically selecting matrix
-		X_ijs for mini-batches based on their quant value. All of the
+		A procedure for probabilistically selecting matrix X_ijs 
+		for mini-batches based on their quant value. All of the
 		computation here is vectorized, so this routine is extremely
 		fast. 
 
@@ -228,20 +229,20 @@ class FactorizationDataset():
 			A tensor array of tuples corresponding to matrix indices
 			in X that comprise each mini-batch
 		"""
-		# init numpy's pseudorandom number generator
+		# Init numpy's pseudorandom number generator
 		rng = np.random.default_rng(self.rand_seed)
 
 		i_idx_all = np.array([])
 		j_idx_all = np.array([])
 
 		for i in range(0, self.iters):
-			# set up the thresholds matrix 
+			# Set up the thresholds matrix 
 			thresh_mat = rng.normal(
 								loc=self.q_thresh, 
 								scale=(self.quants_std * self.std), 
 								size=self.mat.shape,
 			)
-			# no longer strictly Gaussian
+			# No longer strictly Gaussian
 			thresh_mat = np.abs(thresh_mat)
 
 			# Figure out where T_ij > X_ij

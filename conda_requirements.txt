@@ -1,6 +1,0 @@
-pytest
-coverage
-flake8
-click
-tqdm
-colorama

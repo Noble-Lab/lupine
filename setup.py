@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-
 try:
     from setuptools import setup
 except ImportError:
     from distutils.core import setup
-
 
 with open('README.md') as readme_file:
     readme = readme_file.read()
@@ -22,23 +20,23 @@ test_requirements = [
 ]
 
 setup(
-    name='python_boilerplate',
+    name='lupine',
     version='0.1.0',
-    description="python boilerplate contains all the boilerplate you need to create a Python package.",
+    description="proteomics imputation with lupine",
     long_description=readme + '\n\n' + history,
     author="Lincoln Harris",
-    author_email='lincoln.harris@czbiohub.org',
-    url='https://github.com/lincoln-harris/python_boilerplate',
+    author_email='lincolnh@uw.edu',
+    url='https://github.com/Noble-Lab/lupine',
     packages=[
-        'python_boilerplate',
+        'lupine',
     ],
-    package_dir={'python_boilerplate':
-                 'python_boilerplate'},
+    package_dir={'lupine':
+                 'lupine'},
     include_package_data=True,
     install_requires=requirements,
     license="MIT",
     zip_safe=False,
-    keywords='python_boilerplate',
+    keywords='lupine',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
@@ -50,7 +48,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'python_boilerplate = python_boilerplate.commandline:cli'
+            'lupine = lupine.commandline:cli'
         ]
     },
     test_suite='tests',

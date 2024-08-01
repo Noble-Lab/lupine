@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Import modified 'os' module with LC_LANG set so click doesn't complain
+# Import modified 'os' module with LC_LANG 
 from .os_utils import os  # noqa: F401
 
 # Python standard library imports
@@ -10,8 +10,7 @@ from functools import partial
 import click
 
 # Within-module imports
-from python_boilerplate.hello import hello
-
+from lupine.lupine import impute
 
 click.option = partial(click.option, show_default=True)
 
@@ -21,13 +20,11 @@ settings = dict(help_option_names=['-h', '--help'])
              context_settings=settings)
 def cli():
     """
-    python boilerplate contains all the boilerplate you need to create a Python package.
+    TMT proteomics imputation with deep matrix factorization
     """
     pass
 
-
-cli.add_command(hello, name='hello')
-
+cli.add_command(impute, name='impute')
 
 if __name__ == "__main__":
     cli()
