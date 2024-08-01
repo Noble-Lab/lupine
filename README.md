@@ -72,6 +72,7 @@ The arguments are described below. The only required argument is the path to the
 
 --device : str, the device to use for computation, {"cpu", "cuda"}.    
 ```
+The above command will run `lupine` and create a results directory with a file named `lupine_recon_quants.csv`. 
 
 Authors
 --------
