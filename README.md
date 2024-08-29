@@ -4,7 +4,9 @@
 What is `lupine`?
 -------------------------------------
 
-`lupine` is a python package for missing value imputation of quantitative proteomics data with deep matrix factorization. `lupine` is implemented in PyTorch. The only required input is a csv file containing a matrix of protein or peptide level quantifications where rows are proteins or peptides and columns are MS runs. Optional settings are described below. In our manuscript we evaluate `lupine` on TMT data, but it is also applicable to LFQ and DIA. This repository contains model weights for a pre-trained `lupine` model fit to ~1,900 clinical patient samples from CPTAC, described in our manuscript [here](https://pubs.acs.org/doi/10.1021/acs.jproteome.3c00205). Users can download this pre-trained model, append their own MS runs and fine-tune the `lupine` model to impute missing values in their own data. This will write a csv with imputed protein or peptide quantifications for the user-submitted runs. 
+`lupine` is a python package for missing value imputation of quantitative proteomics data with a multilayer perceptron. `lupine` is implemented in PyTorch. The only required input is a csv file containing a matrix of protein or peptide level quantifications where rows are proteins or peptides and columns are MS runs. Optional settings are described below. In our manuscript we evaluate `lupine` on TMT data, but it is also applicable to LFQ and DIA. This repository contains model weights for a pre-trained `lupine` model fit to ~1,900 clinical patient samples from CPTAC, described in our manuscript [here](https://pubs.acs.org/doi/10.1021/acs.jproteome.3c00205). Users can download this pre-trained model, append their own MS runs and fine-tune the `lupine` model to impute missing values in their own data. This will write a csv with imputed protein or peptide quantifications for the user-submitted runs. 
+
+You can find the manuscript describing Lupine [here](https://www.biorxiv.org/content/10.1101/2024.08.26.609780v2). 
 
 `lupine` _currently requires a GPU to train. We are working on a distilled model that can be run with reasonable runtime on a CPU._
 
