@@ -29,26 +29,11 @@ apt-get install autoconf automake gcc zlib1g libbz2 libssl
 
 Installation
 ------------
-**With the python standard library [`venv`](https://docs.python.org/3/library/venv.html) module:**
-```
-python -m venv lupine
-source lupine/bin/activate
-pip3 install lupine
-```
-
 **With [conda](https://anaconda.org/anaconda/conda):**
 ```
-conda create -n lupine python=3.7
+conda env create --file conda_requirements.yml
 conda activate lupine
-pip3 install lupine
-```
-
-**From [PyPi](https://pypi.org/):**   
-System-wide installation, not recommended. 
-```
-pip3 install lupine
-OR
-pip3 install --user lupine
+pip install .
 ```
 
 Usage
