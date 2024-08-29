@@ -51,7 +51,8 @@ class LupineBase(torch.nn.Module):
 		The tolerance criteria for early stopping, according to the
 		standard early stopping criteria
 	max_epochs : int, optional,
-		The maximum number of training epochs for the model
+		The maximum number of training epochs for the model. 
+		Default 42. 
 	patience : int, optional
 		The number of training epochs to wait before stopping if
 		it seems like the model has converged
@@ -76,7 +77,7 @@ class LupineBase(torch.nn.Module):
 		learning_rate=0.01,
 		batch_size=128,
 		tolerance=0.001,
-		max_epochs=128,
+		max_epochs=1,
 		patience=10,
 		rand_seed=None,
 		testing=False,
@@ -104,13 +105,11 @@ class LupineBase(torch.nn.Module):
 			torch.manual_seed(self.rand_seed)
 
 		# For writing the model state to disk
-		self.MODELPATH = "results/OPT_MODEL_INTERNAL.pt"
-
-		# Is there a better way to do this? 
-		try:
-			os.remove(self.MODELPATH)
-		except FileNotFoundError:
-			pass
+		#self.MODELPATH = "results/OPT_MODEL_INTERNAL.pt"
+		# try:
+		# 	os.remove(self.MODELPATH)
+		# except FileNotFoundError:
+		# 	pass
 
 		# Init the run factors
 		self.run_factors = torch.nn.Parameter(
@@ -291,7 +290,7 @@ class LupineBase(torch.nn.Module):
 				curr_loss = train_loss
 
 			if curr_loss < best_loss:
-				torch.save(self, self.MODELPATH)
+				#torch.save(self, self.MODELPATH)
 				best_loss = curr_loss
 
 			# Evaluate early stopping:
