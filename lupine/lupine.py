@@ -9,14 +9,14 @@ deep matrix factorization. Missing values are imputed by taking the
 concatenation of the corresponding protein and run factors and 
 feeding them through a deep neural network.
 """
-from .lupine_base import LupineBase
+from lupine.lupine_base import LupineBase
 import torch
 import click
 import pandas as pd
 import numpy as np
 import torch
 
-from .os_utils import os
+from lupine.os_utils import os
 from pathlib import Path
 
 class Lupine(LupineBase):

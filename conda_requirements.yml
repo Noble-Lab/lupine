@@ -1,4 +1,4 @@
-name: ms-impute-trim
+name: lupine
 channels:
   - pytorch
   - bioconda
@@ -10,9 +10,10 @@ dependencies:
   - scikit-learn
   - pytorch=1.10.*
   - pandas
-  - numpy
+  - numpy<2
   - pip
   - pip:
     - flake8==4.0.*
     - pytest==6.2.*
     - unittest2==1.1.* 
+    - mkl==2024.0
