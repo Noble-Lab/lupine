@@ -168,6 +168,8 @@ def impute(
 	Path(outpath).mkdir(parents=True, exist_ok=True)
 	Path(outpath+"/tmp").mkdir(parents=True, exist_ok=True)
 
+	fnames = []
+
 	# The driver loop for ensemble model
 	for n_iter in range(0, n_models): 
 		print(f"Fitting model {n_iter+1} of {n_models}")
@@ -202,25 +204,26 @@ def impute(
 		# Write. 
 		#   These filenames may be helpful for debugging. 
 		outpath_curr = \
-			outpath + "tmp/qmat_tmp_" + \
+			outpath + "tmp/lupine_imputed_" + \
 			str(n_layers_curr) + "layers_" + \
 			str(prot_factors_curr) + "protFactors_" + \
 			str(run_factors_curr) + "runFactors_" + \
 			str(n_nodes_curr) + "nodes_" + \
 			str(curr_seed) + "seed" + ".csv"
 
+		fnames.append(outpath_curr)
 		model_recon_pd.to_csv(outpath_curr)
 
 	# Do the model ensembling
 	qmats = []
-	for n_iter in range(0, n_models):
-		curr_path = outpath + "tmp/qmat_tmp" + str(n_iter) + ".csv"
-		tmp = pd.read_csv(curr_path)
+	for fname in fnames:
+		tmp = pd.read_csv(fname, index_col=0)
 		qmats.append(tmp)
 
 	qmats_mean = np.mean(qmats, axis=0)
 	outpath_ensemble = outpath + "lupine_recon_quants.csv"
-	pd.DataFrame(qmats_mean).to_csv(outpath_ensemble)
+	pd.DataFrame(qmats_mean, index=rows, columns=cols).\
+		to_csv(outpath_ensemble)
 	shutil.rmtree(outpath+"tmp")
 
 	print(" ")

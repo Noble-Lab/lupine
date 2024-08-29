@@ -77,7 +77,7 @@ class LupineBase(torch.nn.Module):
 		learning_rate=0.01,
 		batch_size=128,
 		tolerance=0.001,
-		max_epochs=1,
+		max_epochs=42,
 		patience=10,
 		rand_seed=None,
 		testing=False,
