@@ -21,7 +21,7 @@ test_requirements = [
 
 setup(
     name='lupine',
-    version='0.1.0',
+    version='0.1',
     description="proteomics imputation with lupine",
     long_description=readme + '\n\n' + history,
     author="Lincoln Harris",

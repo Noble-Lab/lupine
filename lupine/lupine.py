@@ -1,6 +1,5 @@
 """
 LUPINE
-8.4.24
 
 This modules contains the `Lupine` class and the implementation of
 the `impute` command. `Lupine` is the high-level implementation for
@@ -14,8 +13,8 @@ ensemble of Lupine models to the provided matrix and writes a single
 consensus imputed quants matrix as output. 
 """
 from lupine.lupine_base import LupineBase
-import torch
 import click
+import os 
 import pandas as pd
 import numpy as np
 import torch
@@ -140,7 +139,6 @@ def impute(
 	Impute missing values in a protein or peptide quantifications
 	matrix.
 	"""
-
 	# Read in the csv
 	mat_pd = pd.read_csv(csv, index_col=0)
 	rows = list(mat_pd.index)
@@ -230,3 +228,44 @@ def impute(
 	print("----------------------------------")
 	print("----------------------------------")
 	print(" ")
+
+@click.command()
+@click.argument("csv", required=True, nargs=1)
+
+def prepare_matrix(csv):
+	"""
+	Add your MS runs to Lupine's training matrix, prior to 
+	Lupine imputation. 
+	"""
+	print("\n")
+	# Unzip the joint quants matrix
+	cmd = "unzip " + "./joint_quantifications_matrix.zip"
+	os.system(cmd)
+	os.remove("joint_quantifications_matrix.zip")
+
+	# Read in the joint quants matrix and the user's csv
+	joint = pd.read_csv("joint_quantifications_matrix.csv", index_col=0)
+	toadd_mat = pd.read_csv(csv, index_col=0)
+
+	# Merge the two dataframes
+	print("merging...")
+	toadd_mat1 = toadd_mat.reindex(joint.index)
+	joint1 = joint.merge(
+				toadd_mat1, 
+				left_on=joint.index, 
+				right_on=toadd_mat1.index,
+	)
+
+	# Take care of this weird `key_0` column name
+	joint1.index = list(joint1["key_0"])
+	joint1 = joint1.drop(columns=["key_0"])
+
+	# Handle proteins that are unique to the user's MS runs
+	#   TODO: implement this functionality
+	toadd_unique = set(toadd_mat1.index) - set(joint1.index)
+
+	# Write 
+	print("writing...")
+	joint1.to_csv("lupine_train_mat.csv")
+
+	print("finished!\n")
