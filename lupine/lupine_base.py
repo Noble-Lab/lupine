@@ -105,7 +105,7 @@ class LupineBase(torch.nn.Module):
 			torch.manual_seed(self.rand_seed)
 
 		# For writing the model state to disk
-		#self.MODELPATH = "results/OPT_MODEL_INTERNAL.pt"
+		self.MODELPATH = "scratch/OPT_MODEL_INTERNAL.pt"
 		# try:
 		# 	os.remove(self.MODELPATH)
 		# except FileNotFoundError:
@@ -290,11 +290,11 @@ class LupineBase(torch.nn.Module):
 				curr_loss = train_loss
 
 			if curr_loss < best_loss:
-				#torch.save(self, self.MODELPATH)
+				torch.save(self, self.MODELPATH)
 				best_loss = curr_loss
 
 			# Evaluate early stopping:
-				# has validation loss plateaued? 
+				# Has validation loss plateaued? 
 			if self.tolerance > 0 and epoch > 16:
 				tol = torch.abs((best_loss - curr_loss) \
 											/ best_loss)
@@ -310,7 +310,7 @@ class LupineBase(torch.nn.Module):
 					break
 
 			# Evaluate early stopping: 
-				# is validation loss going back up?
+				# Is validation loss going back up?
 			if validate:
 				if self.tolerance > 0 and epoch > 16:
 					window2 = np.array(

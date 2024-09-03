@@ -117,7 +117,6 @@ class Lupine(LupineBase):
 
 @click.command()
 @click.argument("csv", required=True, nargs=1)
-
 @click.option("--outpath", required=True, nargs=1, type=str,
 	help="Output directory")
 @click.option("--n_models", default=10, 
