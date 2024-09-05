@@ -1,18 +1,19 @@
-`lupine`
-================================
+# Lupine
 
-What is `lupine`?
+<img src="https://github.com/Noble-Lab/lupine/blob/main/docs/lupine_logo_v0.png" width="200">
+
+What is Lupine?
 -------------------------------------
 
-`lupine` is a python package for missing value imputation of quantitative proteomics data with a multilayer perceptron. `lupine` is implemented in PyTorch. The only required input is a csv file containing a matrix of protein or peptide level quantifications where rows are proteins or peptides and columns are MS runs. Optional settings are described below. In our manuscript we evaluate `lupine` on TMT data, but it is also applicable to LFQ and DIA. This repository contains model weights for a pre-trained `lupine` model fit to ~1,900 clinical patient samples from CPTAC, described in our manuscript [here](https://pubs.acs.org/doi/10.1021/acs.jproteome.3c00205). Users can download this pre-trained model, append their own MS runs and fine-tune the `lupine` model to impute missing values in their own data. This will write a csv with imputed protein or peptide quantifications for the user-submitted runs. 
+Lupine is a python package for imputing missing values in mass spectrometry (MS) proteomics data with a multilayer perceptron. You can find the manuscript describing Lupine [here](https://www.biorxiv.org/content/10.1101/2024.08.26.609780v2). Lupine requires a csv file containing protein-level quantifications where rows are proteins, columns are MS runs (or in the case of TMT, demultiplexed TMT samples), and values are protein intensities. Lupine is agnostic to the tools/methods used to generate protein quants from raw files; the model is only concerned with protein quants. 
 
-You can find the manuscript describing Lupine [here](https://www.biorxiv.org/content/10.1101/2024.08.26.609780v2). 
+Lupine is unique in that it learns from many MS experiments and runs to impute missing protein quantification values. This repository includes a zip file containing a "joint quantifications" matrix consisting of demultiplexed TMT runs from 10 experiments that were part of the [CPTAC](https://pdc.cancer.gov/pdc/cptac-pancancer) project. You will see the best performance if you attach your MS runs to this joint quantifications matrix and fit Lupine to the merged quantifications matrix. The `join` module is designed to help with this task. However, Lupine may also be fit directly to your MS runs. For this you would proceed directly to the `impute` module. We don't necessarily recommend this practice, as without enough training data, the Lupine model is likely to overfit. 
 
-`lupine` _currently requires a GPU to train. We are working on a distilled model that can be run with reasonable runtime on a CPU._
+Lupine is an ensemble of individual models each trained with different combinations of hyperparameters. These hyperparameters are automatically selected by the model. Accordingly, Lupine is quite slow and requires a GPU to train. We are currently working on a faster and CPU-enabled version of the method. Lupine is implemented in PyTorch. 
 
 Dependencies
 ------------
-`lupine` is configured to run within a virtual environment, the python package dependencies for which are provided in `requirements.txt`. However, if you are having trouble with install, you may try installing the following dependencies. 
+Lupine is configured to run within a virtual environment, the python package dependencies for which are provided in `requirements.txt`. However, if you are having trouble with install, you may try installing the following dependencies. 
 
 **MacOS dependencies:**
 ```
@@ -25,7 +26,7 @@ brew install zlib
 ```
 apt-get install autoconf automake gcc zlib1g libbz2 libssl
 ```
-`lupine` is not currently installable on Windows (we're working on it). `lupine` requires python >= 3.7. 
+Lupine is not currently installable on Windows. Lupine requires python >= 3.7. 
 
 Installation
 ------------
@@ -36,30 +37,42 @@ conda activate lupine
 pip install .
 ```
 
+The next step is to navigate to the latest [release](https://github.com/Noble-Lab/lupine/releases) and download `data.zip` under the *Assets* tab. This should be downloaded to the Lupine project directory. 
+
 Usage
 -----
-To impute a matrix of peptide or protein quantifications:
+Lupine is comprised of three modules: 
 ```
-lupine impute /path/to/peptide/quants/csv --args
+convert : Convert between ENSG or HGNC protein identifiers to ENSPs. 
+join : 	Add your MS runs to Lupine's training matrix, prior to Lupine imputation. 
+impute : Impute missing values in a protein quantification matrix. 
 ```
-The arguments are described below. The only required argument is the path to the csv. 
 
+The input to the method is a proteins-by-samples matrix where rows are proteins and columns are MS runs or samples. As an example, we have included the file `CCLE_quants_tester.csv`, which is a matrix of protein quantifications from the [Cancer Cell Line Encyclopedia](https://gygi.hms.harvard.edu/publications/ccle.html) project: 
+
+<p align="center">
+    <img src="https://github.com/Noble-Lab/lupine/blob/main/docs/ccle_quants_tester_ss.png" width="500">
+</p>
+
+Note that all extraneous metadata columns have been removed: the remaining columns consist solely of protein intensities for each sample. Each protein is specified by a unique Ensemble [ENSP](https://useast.ensembl.org/info/genome/stable_ids/index.html) ID; this is required by the method. If this is not the case for your data, the `convert` module can help convert between ENSG, [HGNC](https://www.genenames.org/) and ENSP IDs. 
+
+Once you have your data in the correct format, the `join` module may be used to add your MS runs to Lupine's training dataset. The options for this step are described below: 
 ```
---n_prot_factors : int, the number of protein factors.          
-
---n_run_factors : int, the number of factors to use for the matrix factorization-based run embeddings.  
-
---n_layers : int, the number of hidden layers in the DNN.        
-
---n_nodes : int, the number of nodes in the factorization based neural network.       
-
---rand_seed : int, the random seed. Should probably only be set for testing and figure generation. Default is None.
-     
---biased : bool, use the biased mini-batch selection procedure when creating the data loader?      
-
---device : str, the device to use for computation, {"cpu", "cuda"}.    
+--csv : Path to the CSV file containing the MS runs to impute
+--log_transform: Log transform the MS runs? {True, False}
 ```
-The above command will run `lupine` and create a results directory with a file named `lupine_recon_quants.csv`. 
+If your MS runs have not previously been log transformed, you should set the `log_transform` parameter to True. 
+
+The final step is to impute your MS runs with the `impute` module. The options for this step are described below: 
+```
+--csv : Path to the merged CSV file
+--outpath : Output directory
+--n_models : The number of models to fit. (Default: 8)
+--biased : Biased batch selection? (Default: True)
+--device : The device to load the model on. (Default: cuda)
+--mode : The model run mode. (Default: run)
+```
+Typically the last four parameters do not need to be specified. This will produce a file within the specified directory named `lupine_recon_quants.csv`. 
 
 Authors
 --------
