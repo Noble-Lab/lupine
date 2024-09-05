@@ -72,7 +72,7 @@ The final step is to impute your MS runs with the `impute` module. The options f
 --device : The device to load the model on. (Default: cuda)
 --mode : The model run mode. (Default: run)
 ```
-Typically the last four parameters do not need to be specified. This will produce a file within the specified directory named `lupine_recon_quants.csv`. 
+Typically the last four parameters do not need to be specified. This step will produce a file within the specified directory named `lupine_recon_quants.csv`. 
 
 Authors
 --------
