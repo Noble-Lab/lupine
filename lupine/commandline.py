@@ -10,7 +10,7 @@ from functools import partial
 import click
 
 # Within-module imports
-from lupine.lupine import impute, prepare_matrix
+from lupine.lupine import impute, join, convert
 
 click.option = partial(click.option, show_default=True)
 
@@ -25,7 +25,8 @@ def cli():
     pass
 
 cli.add_command(impute, name='impute')
-cli.add_command(prepare_matrix, name='prepare-matrix')
+cli.add_command(join, name='join')
+cli.add_command(convert, name='convert')
 
 if __name__ == "__main__":
     cli()

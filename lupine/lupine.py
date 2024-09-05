@@ -15,10 +15,12 @@ consensus imputed quants matrix as output.
 from lupine.lupine_base import LupineBase
 import click
 import os 
+import sys
 import pandas as pd
 import numpy as np
 import torch
 import shutil
+from Bio import SeqIO
 
 from lupine.os_utils import os
 from pathlib import Path
@@ -230,42 +232,101 @@ def impute(
 	print(" ")
 
 @click.command()
-@click.argument("csv", required=True, nargs=1)
+@click.option("--csv", required=True, nargs=1, type=str,
+	help="Path to the CSV file containing the MS runs to impute")
+@click.option("--log_transform", required=True, nargs=1, type=bool,
+	help="Log transform the MS runs? {True, False}")
 
-def prepare_matrix(csv):
+def join(csv, log_transform):
 	"""
 	Add your MS runs to Lupine's training matrix, prior to 
 	Lupine imputation. 
 	"""
-	print("\n")
+	print("\npreparing to join the MS runs...")
+
 	# Unzip the joint quants matrix
-	cmd = "unzip " + "./joint_quantifications_matrix.zip"
-	os.system(cmd)
-	os.remove("joint_quantifications_matrix.zip")
+	if os.path.isfile("data.zip"):
+		cmd = "unzip data.zip"
+		#os.system(cmd)
+		#os.remove("data.zip")
+
+	if not os.path.isdir("data"):
+		sys.exit("Please navigate to the lupine package directory")
 
 	# Read in the joint quants matrix and the user's csv
-	joint = pd.read_csv("joint_quantifications_matrix.csv", index_col=0)
-	toadd_mat = pd.read_csv(csv, index_col=0)
+	joint_mat = pd.read_csv("data/joint_quantifications.csv", 
+						index_col=0)
+	user_mat = pd.read_csv(csv, index_col=0)
 
-	# Merge the two dataframes
-	print("merging...")
-	toadd_mat1 = toadd_mat.reindex(joint.index)
-	joint1 = joint.merge(
-				toadd_mat1, 
-				left_on=joint.index, 
-				right_on=toadd_mat1.index,
+	user_quants = np.array(user_mat)
+	user_quants[user_quants == 0] = np.nan
+
+	# The optional log transform of the user's runs
+	if log_transform: 
+		print("log transforming...")
+		user_quants = np.log2(user_quants)
+
+	# Get the means and stds of the user's runs
+	q_mean = np.nanmean(user_quants)
+	q_std = np.nanstd(user_quants)
+	q_var = np.nanvar(user_quants)
+
+	# Normalize
+	print("normalizing...\n")
+	user_quants_norm = (user_quants - q_mean) / q_std
+
+	# Do the right shift
+	q_min = np.nanmin(user_quants_norm)
+	user_quants_norm = user_quants_norm + np.abs(q_min)
+
+	user_mat_norm = pd.DataFrame(
+						user_quants_norm, 
+						index=user_mat.index, 
+						columns=user_mat.columns,
 	)
 
-	# Take care of this weird `key_0` column name
-	joint1.index = list(joint1["key_0"])
-	joint1 = joint1.drop(columns=["key_0"])
 
-	# Handle proteins that are unique to the user's MS runs
-	#   TODO: implement this functionality
-	toadd_unique = set(toadd_mat1.index) - set(joint1.index)
+	inter = list(np.intersect1d(user_mat_norm.index, joint_mat.index))
+	joint_unique = set(joint_mat.index) - set(user_mat_norm.index)
+	user_unique = set(user_mat_norm.index) - set(joint_mat.index)
 
-	# Write 
+	print(f"num shared proteins: {len(inter)}")
+	print(f"num unique proteins: {len(user_unique)}\n")
+
+	# Add the unique proteins to the joint quants matrix
+	print("merging...")
+	for ensg in user_unique:
+		joint_mat.loc[ensg] = np.nan
+
+	# Reindex the user's matrix 
+	user_mat_norm = user_mat_norm.reindex(joint_mat.index)
+
+	# Do the merge
+	joint_merge = joint_mat.merge(
+						user_mat_norm, 
+						left_on=joint_mat.index, 
+						right_on=user_mat_norm.index,
+	)
+	print(f"merged matrix shape: {joint_merge.shape}")
+
+	# Reindex
+	joint_merge.index = list(joint_merge["key_0"])
+	joint_merge = joint_merge.drop(columns=["key_0"])
+
+	# Write
 	print("writing...")
-	joint1.to_csv("lupine_train_mat.csv")
+	joint_merge.to_csv("data/joint_merged.csv")
 
-	print("finished!\n")
+	print("done!\n")
+
+@click.command()
+@click.option("--csv", required=True, nargs=1, type=str,
+	help="Path to the CSV file containing the MS runs to impute")
+@click.option("--format", required=True, nargs=1, type=str,
+	help="The current protein ID format. {ENSG, HGNC}")
+
+def convert(csv, format):
+	"""
+	Convert between ENSG or HGNC protein identifiers to ENSPs. 
+	"""
+	print("\nThis module has not been implemented yet\n")
