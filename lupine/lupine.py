@@ -322,11 +322,103 @@ def join(csv, log_transform):
 @click.command()
 @click.option("--csv", required=True, nargs=1, type=str,
 	help="Path to the CSV file containing the MS runs to impute")
-@click.option("--format", required=True, nargs=1, type=str,
+@click.option("--prot_format", required=True, nargs=1, type=str,
 	help="The current protein ID format. {ENSG, HGNC}")
 
-def convert(csv, format):
+def convert(csv, prot_format):
 	"""
 	Convert between ENSG or HGNC protein identifiers to ENSPs. 
 	"""
-	print("\nThis module has not been implemented yet\n")
+	# Unzip the joint quants matrix
+	if os.path.isfile("data.zip"):
+		cmd = "unzip data.zip"
+		#os.system(cmd)
+		#os.remove("data.zip")
+
+	if not os.path.isdir("data"):
+		sys.exit("Please navigate to the lupine package directory")
+
+	user_mat = pd.read_csv(csv, index_col=0)
+
+	# Read in the HGNC database file
+	hgnc_db = pd.read_csv(
+				"data/HGNC_database.txt", 
+				sep="\t", 
+				low_memory=False,
+	)
+	# Read in the ENSEMBL fasta
+	fasta_seqs = SeqIO.parse(
+					open("data/gencode.v44.pc_translations.fa"), 
+					"fasta",
+	)
+
+	# Create a dictionary mapping ENSPs to ENSGs
+	#   And vice versa
+	gene_x_prot = {}
+	prot_x_gene = {}
+
+	for fasta in fasta_seqs:
+		name, descript, sequence = \
+			fasta.id, fasta.description, str(fasta.seq)
+		# Get the ENSP and ENSG IDs
+		ensp_id = name.split("|")[0]
+		ensg_id = name.split("|")[2]
+		# Strip the ".x" characters. Hope this is ok.
+		ensp_id = ensp_id.split(".")[0]
+		ensg_id = ensg_id.split(".")[0]
+
+		# Update the first dictionary
+		prot_x_gene[ensp_id] = ensg_id
+
+		# Update the second
+		if ensg_id in gene_x_prot:
+			gene_x_prot[ensg_id].append(ensp_id)
+		else:
+			gene_x_prot[ensg_id] = [ensp_id]
+
+	# Init a dataframe that has all three identifiers for every
+	#   protein in the user's matrix
+	id_mapper = pd.DataFrame(columns=["HGNC", "ENSP", "ENSG"])
+
+	if prot_format == "HGNC":
+		id_mapper["HGNC"] = user_mat.index
+	elif prot_format == "ENSG":
+		id_mapper["ENSG"] = user_mat.index
+
+	# Use the HGNC database to fill in the ENSGs
+	if prot_format == "HGNC":
+		for i in range(0, id_mapper.shape[0]):
+			curr_row = id_mapper.iloc[i]
+			curr_hgnc = curr_row["HGNC"]
+
+			hgnc_db_row = hgnc_db[hgnc_db["symbol"] == curr_hgnc]
+			curr_ensg = hgnc_db_row["ensembl_gene_id"]
+
+			try: 
+				id_mapper.loc[i, "ENSG"] = curr_ensg.item()
+			except ValueError:
+				id_mapper.loc[i, "ENSG"] = None
+
+	# Use the dictionary to fill in the ENSPs
+	#   This gets complicated when you have multiple ENSPs to each 
+	#   ENSG. Here we're just picking the first ENSP for each ENSG. 
+	#   This probably isn't ideal. 
+	for i in range(0, id_mapper.shape[0]):
+		curr_row = id_mapper.iloc[i]
+		curr_ensg = curr_row["ENSG"]
+
+		try: 
+			curr_ensp = gene_x_prot[curr_ensg][0]
+		except KeyError:
+			curr_ensp = None
+
+		id_mapper.loc[i, "ENSP"] = curr_ensp
+
+	# Reindex the user's quants matrix
+	user_mat.index = list(id_mapper["ENSP"])
+
+	# Join by shared protein IDs
+	user_mat = user_mat.groupby(by=user_mat.index).mean()
+
+	# Write
+	user_mat.to_csv("data/joint_quants_converted.csv")
