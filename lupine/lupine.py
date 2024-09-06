@@ -1,16 +1,20 @@
 """
 LUPINE
 
-This modules contains the `Lupine` class and the implementation of
-the `impute` command. `Lupine` is the high-level implementation for
-a PyTorch model for imputing protein-level quantifications using
-a multilayer perceptron. Missing values are imputed by taking the
-concatenation of the corresponding protein and run factors and 
-feeding them through a deep neural network.
+This script contains the `Lupine` class and the implementation of 
+the three `lupine` modules. The former is a high-level implementation
+of a PyTorch model for imputing protein or peptide quantifications
+using a multilayer perceptron. Missing values are imputed by taking
+the concatenation of the corresponding protein and run factors and
+feeding them through a shallow neural network. 
 
-This module implements the method's `impute` command, which fits an
-ensemble of Lupine models to the provided matrix and writes a single 
-consensus imputed quants matrix as output. 
+Beyond the `Lupine` class, this script consists of three modules: 
+	1. `impute` : Impute missing values in a protein quantifications
+		matrix.
+	2. `join` : Add your MS runs to Lupine's training matrix, prior 
+		to Lupine imputation. 
+	3. `convert` : Convert between ENSG or HGNC protein identifiers 
+		to ENSPs.
 """
 from lupine.lupine_base import LupineBase
 import click
@@ -138,8 +142,7 @@ def impute(
 		mode, 
 ):
 	"""
-	Impute missing values in a protein or peptide quantifications
-	matrix.
+	Impute missing values in a protein quantifications matrix.
 	"""
 	# Read in the csv
 	mat_pd = pd.read_csv(csv, index_col=0)
@@ -247,7 +250,7 @@ def join(csv, log_transform):
 	# Unzip the joint quants matrix
 	if os.path.isfile("data.zip"):
 		cmd = "unzip data.zip"
-		#os.system(cmd)
+		os.system(cmd)
 		#os.remove("data.zip")
 
 	if not os.path.isdir("data"):
@@ -332,7 +335,7 @@ def convert(csv, prot_format):
 	# Unzip the joint quants matrix
 	if os.path.isfile("data.zip"):
 		cmd = "unzip data.zip"
-		#os.system(cmd)
+		os.system(cmd)
 		#os.remove("data.zip")
 
 	if not os.path.isdir("data"):
