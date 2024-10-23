@@ -1,6 +1,5 @@
 """
 LUPINE_BASE
-8.4.24
 
 The abstract base class for a model that randomly generates protein 
 and run embeddings, then refines them with stochastic gradient 
@@ -65,6 +64,9 @@ class LupineBase(torch.nn.Module):
 		the data loader? 
 	device : str, optional,
 		The device to use for computation. {"cpu", "cuda"}
+	outpath : str, optional, 
+		The output path to write the intermediate files and imputed
+		quants matrix to. 
 	"""
 	def __init__(
 		self, 
@@ -74,15 +76,16 @@ class LupineBase(torch.nn.Module):
 		n_run_factors=128,
 		n_layers=2,
 		n_nodes=128,
-		learning_rate=0.01,
+		learning_rate=0.001,
 		batch_size=128,
 		tolerance=0.001,
-		max_epochs=42,
+		max_epochs=30, # change me
 		patience=10,
 		rand_seed=None,
 		testing=False,
 		biased=False,
 		device="cpu",
+		outpath=None,
 	):
 		super().__init__()
 
@@ -105,11 +108,11 @@ class LupineBase(torch.nn.Module):
 			torch.manual_seed(self.rand_seed)
 
 		# For writing the model state to disk
-		self.MODELPATH = "scratch/OPT_MODEL_INTERNAL.pt"
-		# try:
-		# 	os.remove(self.MODELPATH)
-		# except FileNotFoundError:
-		# 	pass
+		self.MODELPATH = outpath + "tmp/OPT_MODEL_INTERNAL.pt"
+		try:
+			os.remove(self.MODELPATH)
+		except FileNotFoundError:
+			pass
 
 		# Init the run factors
 		self.run_factors = torch.nn.Parameter(
@@ -156,7 +159,8 @@ class LupineBase(torch.nn.Module):
 			torch.nn.Linear(self.n_nodes, 1, device=self.device)
 		)
 		# Add the final transformation
-		dnn.append(torch.nn.LeakyReLU(0.1))
+		#dnn.append(torch.nn.LeakyReLU(0.1))
+		dnn.append(torch.nn.Softplus())
 		# Convert to sequential
 		self.dnn = torch.nn.Sequential(*dnn)
 
@@ -211,7 +215,7 @@ class LupineBase(torch.nn.Module):
 			)
 		# Generate the initial data loaders
 		train_loader = FactorizationDataset(
-								X,
+								X_mat,
 								X_val_mat, 
 								partition="Train",
 								batch_size=self.batch_size, 
@@ -227,7 +231,7 @@ class LupineBase(torch.nn.Module):
 		)
 		if validate:
 			val_loader = FactorizationDataset(
-								X,
+								X_mat,
 								X_val_mat, 
 								partition="Valid",
 								batch_size=self.batch_size, 
@@ -328,7 +332,7 @@ class LupineBase(torch.nn.Module):
 
 			# Generate new data loaders at the end of every epoch
 			train_loader = FactorizationDataset(
-									X,
+									X_mat,
 									X_val_mat, 
 									partition="Train",
 									batch_size=self.batch_size, 
@@ -344,7 +348,7 @@ class LupineBase(torch.nn.Module):
 			)
 			if validate:
 				val_loader = FactorizationDataset(
-									X,
+									X_mat,
 									X_val_mat, 
 									partition="Valid",
 									batch_size=self.batch_size, 

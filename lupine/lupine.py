@@ -61,6 +61,9 @@ class Lupine(LupineBase):
 		the data loader? 
 	device : str, optional,
 		The device to use for computation. {"cpu", "cuda"}
+	outpath : str, optional, 
+		The output path to write the intermediate files and imputed
+		quants matrix to. 
 	"""
 	def __init__(
 		self, 
@@ -74,6 +77,7 @@ class Lupine(LupineBase):
 		testing=False,
 		biased=True,
 		device="cpu",
+		outpath=None,
 	):
 		super().__init__(
 			n_prots=n_prots,
@@ -86,6 +90,7 @@ class Lupine(LupineBase):
 			testing=testing,
 			biased=biased,
 			device=device,
+			outpath=outpath,
 		)
 
 	def forward(self, locs):
@@ -195,9 +200,9 @@ def impute(
 					rand_seed=curr_seed,
 					testing=test_bool,
 					biased=biased,
-					device=device
+					device=device, 
+					outpath=outpath,
 		)
-
 		# Fit the individual model 
 		model_recon = model.fit_transform(mat)
 		model_recon_pd = \
