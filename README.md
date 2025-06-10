@@ -1,7 +1,3 @@
-# Lupine
-
-<img src="https://github.com/Noble-Lab/lupine/blob/main/docs/lupine_logo_v0.png" width="200">
-
 What is Lupine?
 -------------------------------------
 
